@@ -32,7 +32,7 @@ def main():
     set_webhook()
 
     # Initialize the bot application
-    application = Application.builder().token(BOT_TOKEN).build()
+    application = Application.builder().token("6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw").build()
 
     # Register command handlers
     application.add_handler(CommandHandler("start", start))
