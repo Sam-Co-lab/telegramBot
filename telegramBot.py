@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # Replace with your bot token from BotFather
-BOT_TOKEN = os.environ.get("BOT_TOKEN")  # Use environment variable for security
+BOT_TOKEN = os.environ.get("6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw")  # Use environment variable for security
 WEBHOOK_URL = "https://telegrambot-dvnr.onrender.com/webhook"  # Replace with your Render URL
 
 # Create the bot application
