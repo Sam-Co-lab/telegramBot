@@ -1,38 +1,52 @@
+from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes, Dispatcher
+
+# Flask app for the webhook
+app = Flask(__name__)
 
 with open('cred.txt', 'r') as f:
     token = f.read()
     f.close()
 
-# Function to handle the /start command
+# Replace with your bot token
+BOT_TOKEN = token
+WEBHOOK_URL = "https://your-render-url.onrender.com/webhook"  # Replace with your Render URL
+
+# Initialize the Telegram Bot application
+application = Application.builder().token(BOT_TOKEN).build()
+
+# Define the /start command handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Bot has been started")
+    await update.message.reply_text("Hello! I'm your webhook-based bot.")
 
-# Function to handle the /help command
+# Define the /help command handler
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("I can respond to messages and echo them back! Try sending me something.")
+    await update.message.reply_text("I respond to /start and /help commands. Try sending me something!")
 
-# Function to handle all text messages (echoes them back)
+# Define a message handler
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_message = update.message.text
     await update.message.reply_text(f"You said: {user_message}")
 
-# Main function to run the bot
-def main():
-    # Replace 'YOUR-BOT-TOKEN' with the token you got from BotFather
-    application = Application.builder().token(token).build()
+# Set up the command and message handlers
+dispatcher = Dispatcher(application.bot, None, workers=0)
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("help", help_command))
+dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-    # Register command handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
+# Webhook endpoint for Telegram
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    dispatcher.process_update(update)
+    return "OK", 200
 
-    # Register a message handler to echo all text messages
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-
-    # Start the bot
-    print("Bot is running... Press Ctrl+C to stop.")
-    application.run_polling()
+# Main function to set the webhook
+@app.route("/set_webhook", methods=["GET"])
+def set_webhook():
+    application.bot.set_webhook(WEBHOOK_URL)
+    return "Webhook set!", 200
 
 if __name__ == "__main__":
-    main()
+    app.run(host="0.0.0.0", port=5000)
