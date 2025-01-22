@@ -22,7 +22,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # Set the webhook to the desired URL
 def set_webhook():
-    webhook_url = f"https://api.telegram.org/bot{"6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw"}/setWebhook?url={WEBHOOK_URL}"
+    webhook_url = f"https://api.telegram.org/bot6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw/setWebhook?url={WEBHOOK_URL}"
     response = requests.get(webhook_url)
     print(f"Webhook set response: {response.json()}")
 
