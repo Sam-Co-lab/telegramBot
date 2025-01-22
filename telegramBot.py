@@ -11,7 +11,7 @@ BOT_TOKEN = os.environ.get("6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw")  # 
 WEBHOOK_URL = "https://telegrambot-dvnr.onrender.com/webhook"  # Replace with your Render URL
 
 # Create the bot application
-application = Application.builder().token(BOT_TOKEN).build()
+application = Application.builder().token("6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw").build()
 
 # Handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
