@@ -7,8 +7,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 app = Flask(__name__)
 
 # Define bot token and webhook URL
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-WEBHOOK_URL = f"https://{os.environ.get('RENDER_EXTERNAL_URL')}/webhook"
+BOT_TOKEN = "6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw"
+WEBHOOK_URL = "https://telegrambot-dvnr.onrender.com/webhook"
 
 # Function to handle /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
