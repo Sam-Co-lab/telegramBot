@@ -1,6 +1,40 @@
 import os
+import time
 from telegram import Update, Bot
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+
+# Dictionary to store blocked words for each chat
+blocked_words = {}
+
+# Function to ask admin for blocked words
+def set_blocked_words(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
+        words = ' '.join(context.args).split(',')
+        blocked_words[chat_id] = [word.strip() for word in words]
+        update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}')
+    else:
+        update.message.reply_text('Only admins can set blocked words.')
+
+# Function to monitor messages and block users
+def monitor_chats(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    message_text = update.message.text.lower()
+
+    # Check for blocked words
+    if chat_id in blocked_words:
+        for word in blocked_words[chat_id]:
+            if word in message_text:
+                context.bot.kick_chat_member(chat_id, user_id, until_date=time.time() + 7200)
+                update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a blocked word.')
+                return
+
+    # Check for links
+    if 'http://' in message_text or 'https://' in message_text:
+        context.bot.kick_chat_member(chat_id, user_id, until_date=time.time() + 7200)
+        update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for sharing a link.')
 
 # Define a function to handle the /start command
 def start(update: Update, context: CallbackContext) -> None:
@@ -21,6 +55,8 @@ def main():
     # Register command handlers
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("setblockedwords", set_blocked_words))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, monitor_chats))
 
     # Start the webhook to listen for messages
     updater.start_webhook(listen='0.0.0.0',
