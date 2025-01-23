@@ -14,6 +14,7 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
         words = ' '.join(context.args).split(',')
         blocked_words[chat_id] = [word.strip() for word in words]
         update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}')
+        print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
     else:
         update.message.reply_text('Only admins can set blocked words.')
 
@@ -28,13 +29,15 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
         for word in blocked_words[chat_id]:
             if word in message_text:
                 context.bot.kick_chat_member(chat_id, user_id, until_date=time.time() + 7200)
-                update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a blocked word.')
+                update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a blocked word: {word}')
+                print(f'User {user_id} blocked for using word: {word} in chat {chat_id}')
                 return
 
     # Check for links
     if 'http://' in message_text or 'https://' in message_text:
         context.bot.kick_chat_member(chat_id, user_id, until_date=time.time() + 7200)
         update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for sharing a link.')
+        print(f'User {user_id} blocked for sharing a link in chat {chat_id}')
 
 # Define a function to handle the /start command
 def start(update: Update, context: CallbackContext) -> None:
@@ -47,7 +50,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
 # Main function to set up the bot
 def main():
     # Replace with your actual Telegram Bot API token
-    bot_token = '7256270773:AAEqR_2IJFCj9nvLZWvIWlOe-BEQrR7-rT0'
+    bot_token = 'YOUR_TELEGRAM_BOT_API_TOKEN'
     updater = Updater(bot_token)
 
     dispatcher = updater.dispatcher
