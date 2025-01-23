@@ -45,8 +45,8 @@ def webhook():
             # Convert JSON to Update object
             update = Update.de_json(json_update, application.bot)
 
-            # Process the update using the application's dispatcher
-            application.updater.dispatcher.process_update(update)  # Correct method to process update
+            # Process the update asynchronously using the application
+            application.update_queue.put_nowait(update)  # Correct way to add to the queue
 
             logger.info(f"Update processed for user {update.effective_user.id}")
         except Exception as e:
