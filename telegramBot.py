@@ -17,6 +17,10 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
     else:
         update.message.reply_text('Only admins can set blocked words.')
 
+# Custom filter function to check if awaiting words
+def filter_awaiting_words(message):
+    return message.from_user.id in message.bot_data.get('awaiting_words', [])
+
 # Function to handle incoming messages for blocked words
 def handle_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
@@ -72,7 +76,7 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("setblockedwords", set_blocked_words))
-    dispatcher.add_handler(MessageHandler(Filters.text & Filters.user_data.get('awaiting_words', False), handle_words))
+    dispatcher.add_handler(MessageHandler(Filters.text & filter_awaiting_words, handle_words))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, monitor_chats))
 
     # Start the webhook to listen for messages
