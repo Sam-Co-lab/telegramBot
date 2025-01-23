@@ -50,7 +50,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
 # Main function to set up the bot
 def main():
     # Replace with your actual Telegram Bot API token
-    bot_token = 'YOUR_TELEGRAM_BOT_API_TOKEN'
+    bot_token = '7256270773:AAGccvp6zUWHQaLzcaJKM6oYCGNnqebuHU0'
     updater = Updater(bot_token)
 
     dispatcher = updater.dispatcher
