@@ -55,7 +55,7 @@ def main():
 
     # Register command handlers
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
+    #application.add_handler(CommandHandler("help", help_command))
 
     # Register a message handler to echo all text messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
