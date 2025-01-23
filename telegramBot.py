@@ -1,3 +1,4 @@
+import asyncio
 from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -44,8 +45,9 @@ def webhook():
             # Convert JSON to Update object
             update = Update.de_json(json_update, application.bot)
 
-            # Process the update
-            application.process_update(update)  # Process the update immediately
+            # Process the update asynchronously
+            asyncio.run(application.process_update(update))  # Await the asynchronous method
+
             logger.info(f"Update processed for user {update.effective_user.id}")
         except Exception as e:
             logger.error(f"Error processing update: {e}")
