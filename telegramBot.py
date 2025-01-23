@@ -7,7 +7,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 blocked_words = {}
 
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text(blocked_words)
+    chat_id = update.effective_chat.id
+    update.message.reply_text(str(blocked_words[chat_id])[1:-1])
 
 # Function to ask admin for blocked words
 def set_blocked_words(update: Update, context: CallbackContext) -> None:
