@@ -17,7 +17,7 @@ app = Flask(__name__)
 application = Application.builder().token(BOT_TOKEN).build()
 
 # Command handler function
-async def start(update: Update, context):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         logger.info(f"Received /start command from user {update.effective_user.id}")
         await update.message.reply_text("Hello! I am your Telegram bot. How can I help you?")
