@@ -14,7 +14,7 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('Please send the blocked words separated by commas.')
         context.user_data['waiting_for_words'] = True
         # Add a handler to catch the next message and call update_blocked_words
-        updater.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
+        context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
         #words = ' '.join(context.args).split(',')
         #chat_id = update.effective_chat.id
         #words = ' '.join(update.message.text.lower()).split(',')
@@ -32,7 +32,9 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
         # Remove the handler after updating the blocked words
-        updater.dispatcher.remove_handler_by_group(1)
+        context.dispatcher.remove_handler_by_group(1)
+
+
 # Function to monitor messages and block users
 def monitor_chats(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
