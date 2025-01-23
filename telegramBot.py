@@ -46,7 +46,7 @@ def webhook():
             update = Update.de_json(json_update, application.bot)
 
             # Process the update asynchronously
-            asyncio.run(application.process_update(update))  # Await the asynchronous method
+            asyncio.run(application.dispatcher.process_update(update))  # Use the correct method
 
             logger.info(f"Update processed for user {update.effective_user.id}")
         except Exception as e:
