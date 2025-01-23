@@ -6,6 +6,9 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 # Dictionary to store blocked words for each chat
 blocked_words = {}
 
+def show_blocked_words(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text(blocked_words)
+
 # Function to ask admin for blocked words
 def set_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
@@ -71,6 +74,7 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("setblockedwords", set_blocked_words))
+    dispatcher.add_handler(CommandHandler("showblockedwords", show_blocked_words))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, monitor_chats))
 
     # Start the webhook to listen for messages
