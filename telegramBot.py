@@ -1,7 +1,7 @@
-from flask import Flask, request
-from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import asyncio
+from flask import Flask, request
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import logging
 
 # Replace with your bot token
@@ -19,14 +19,16 @@ application = Application.builder().token(BOT_TOKEN).build()
 
 # Command handler function
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info(f"Received /start command from user {update.effective_user.id}")
-    await update.message.reply_text("Hello! I am your Telegram bot. How can I help you?")
+    try:
+        logger.info(f"Received /start command from user {update.effective_user.id}")
+        await update.message.reply_text("Hello! I am your Telegram bot. How can I help you?")
+    except Exception as e:
+        logger.error(f"Error in /start handler: {e}")
 
-# Echo handler function
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         user_message = update.message.text
-        logger.info(f"Echoing message: {user_message}")
+        logger.info(f"User said: {user_message}")
         await update.message.reply_text(f"You said: {user_message}")
     except Exception as e:
         logger.error(f"Error in echo handler: {e}")
@@ -38,16 +40,23 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 @app.route("/webhook", methods=["POST"])
 def webhook():
     """Handle incoming Telegram updates."""
-    try:
-        json_update = request.get_json()
-        logger.info(f"Incoming update: {json_update}")
-        
-        # Use asyncio to process the update
-        update = Update.de_json(json_update, application.bot)
-        asyncio.run(application.process_update(update))
-    except Exception as e:
-        logger.error(f"Error processing update: {e}")
-    return "OK", 200
+    if request.method == "POST":
+        try:
+            # Get the incoming update
+            json_update = request.get_json()
+            logger.info(f"Incoming update: {json_update}")
+
+            # Convert JSON to Update object
+            update = Update.de_json(json_update, application.bot)
+
+            # Initialize and process the update
+            asyncio.run(application.initialize())  # Ensure application is initialized
+            asyncio.run(application.process_update(update))  # Process the update asynchronously
+
+            logger.info(f"Update processed for user {update.effective_user.id}")
+        except Exception as e:
+            logger.error(f"Error processing update: {e}")
+        return "OK", 200
 
 if __name__ == "__main__":
     try:
