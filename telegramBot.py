@@ -20,7 +20,7 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
         #print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
     else:
         update.message.reply_text('Only admins can set blocked words.')
-def next_mess():
+def next_mess(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     words = ' '.join(context.args).split(',')
