@@ -1,5 +1,5 @@
 from flask import Flask, request
-from telegram import Bot, Update
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import logging
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Telegram Bot Application
-#application = Application.builder().token(BOT_TOKEN).build()
+application = Application.builder().token(BOT_TOKEN).build()
 
 # Command handler function
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -28,9 +28,9 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_message = update.message.text
     await update.message.reply_text(f"You said: {user_message}")
 
-
-# Add handler to application
-#application.add_handler(CommandHandler("start", start))
+# Add handlers to application
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -45,23 +45,11 @@ def webhook():
             update = Update.de_json(json_update, application.bot)
 
             # Process the update
-            application.update_queue.put_nowait(update)
+            application.process_update(update)  # Process the update immediately
+            logger.info(f"Update processed for user {update.effective_user.id}")
         except Exception as e:
             logger.error(f"Error processing update: {e}")
         return "OK", 200
-
-application = Application.builder().token(BOT_TOKEN).build()
-
-    # Register command handlers
-application.add_handler(CommandHandler("start", start))
-#application.add_handler(CommandHandler("help", help_command))
-
-    # Register a message handler to echo all text messages
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-
-    # Start the bot
-    #print("Bot is running... Press Ctrl+C to stop.")
-    #application.run_polling()
 
 if __name__ == "__main__":
     try:
@@ -72,6 +60,5 @@ if __name__ == "__main__":
 
         # Run the Flask app
         app.run(host="0.0.0.0", port=5000)
-        application.run_polling()
     except Exception as e:
         logger.error(f"Failed to start the bot: {e}")
