@@ -7,8 +7,11 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 blocked_words = {}
 
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
-    chat_id = update.effective_chat.id
-    update.message.reply_text(str(blocked_words[chat_id])[1:-1])
+    if blocked_words:
+        chat_id = update.effective_chat.id
+        update.message.reply_text(str(blocked_words[chat_id])[1:-1])
+    else:
+        update.message.reply_text("No word blacklisted YET...")
 
 # Function to ask admin for blocked words
 def set_blocked_words(update: Update, context: CallbackContext) -> None:
@@ -16,12 +19,12 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
         #update.message.reply_text(user_id)
-        update.message.reply_text('Please send the blocked words separated by commas.')
+        update.message.reply_text('Please send the words to be blacklisted, separated by commas.')
         context.user_data['waiting_for_words'] = True
         # Add a handler to catch the next message and call update_blocked_words
         context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
     else:
-        update.message.reply_text('Only admins can set blocked words.')
+        update.message.reply_text('Only admins can blacklist words.')
 def update_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if context.user_data.get('waiting_for_words'):
@@ -50,7 +53,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
         for word in blocked_words[chat_id]:
             if word in message_text:
                 context.bot.ban_chat_member(chat_id, user_id, until_date=time.time() + 60, revoke_messages=True)
-                update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a black-listed word')
+                update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a blacklisted word')
                 print(f'User {user_id} blocked for using a blck-listed word in chat {chat_id}')
                 return
 
