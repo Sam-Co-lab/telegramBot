@@ -1,60 +1,38 @@
-import os
-import requests
 from flask import Flask, request
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, Bot
+from telegram.ext import Dispatcher, CommandHandler
 
+# Replace with your bot token
+BOT_TOKEN = "6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw"
+
+# Flask app
 app = Flask(__name__)
 
-# Define bot token and webhook URL
-BOT_TOKEN = "6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw"
-WEBHOOK_URL = "https://telegrambot-dvnr.onrender.com/webhook"
+# Telegram Bot
+bot = Bot(token=BOT_TOKEN)
 
-# Function to handle /start command
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Bot has been started")
+# Dispatcher to handle bot updates
+dispatcher = Dispatcher(bot, None, use_context=True)
 
-# Function to handle /help command
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("I can respond to messages and echo them back! Try sending me something.")
+# Command handler function
+def start(update: Update, context):
+    update.message.reply_text("Hello! I am your Telegram bot. How can I help you?")
 
-# Function to echo all text messages
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_message = update.message.text
-    await update.message.reply_text(f"You said: {user_message}")
+# Add handler to dispatcher
+dispatcher.add_handler(CommandHandler("start", start))
 
-# Set webhook to Render URL
-def set_webhook():
-    webhook_url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook?url={WEBHOOK_URL}"
-    response = requests.get(webhook_url)
-    print(f"Webhook set response: {response.json()}")
-
-# Define Flask route to handle webhook
-@app.route('/webhook', methods=['POST'])
+@app.route("/webhook", methods=["POST"])
 def webhook():
-    json_str = request.get_data().decode("UTF-8")
-    update = Update.de_json(json_str, application.bot)
-    application.update_queue.put(update)
-    return "OK", 200
-
-# Main function to run the bot
-def main():
-    # Set webhook
-    set_webhook()
-
-    # Create the application
-    application = Application.builder().token(BOT_TOKEN).build()
-
-    # Register command handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-
-    # Register message handler to echo text messages
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-
-    # Start polling and webhook on the same app
-    print("Bot is running... Press Ctrl+C to stop.")
-    application.run_webhook(listen="0.0.0.0", port=int(os.environ.get("PORT", 10000)), url_path='webhook')
+    """Handle incoming Telegram updates."""
+    if request.method == "POST":
+        update = Update.de_json(request.get_json(force=True), bot)
+        dispatcher.process_update(update)
+        return "OK", 200
 
 if __name__ == "__main__":
-    main()
+    # Set the webhook URL
+    webhook_url = "https://telegrambot-dvnr.onrender.com/webhook"
+    bot.set_webhook(url=webhook_url)
+    print(f"Webhook set to {webhook_url}")
+    # Run the Flask app
+    app.run(host="0.0.0.0", port=5000)
