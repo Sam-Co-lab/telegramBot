@@ -46,14 +46,11 @@ def webhook():
             json_update = request.get_json()
             logger.info(f"Incoming update: {json_update}")
 
-            # Convert JSON to Update object
+            # Convert JSON to Update object and put it into the queue
             update = Update.de_json(json_update, application.bot)
+            application.update_queue.put_nowait(update)
 
-            # Initialize and process the update
-            asyncio.run(application.initialize())  # Ensure application is initialized
-            asyncio.run(application.process_update(update))  # Process the update asynchronously
-
-            logger.info(f"Update processed for user {update.effective_user.id}")
+            logger.info(f"Update added to queue for user {update.effective_user.id}")
         except Exception as e:
             logger.error(f"Error processing update: {e}")
         return "OK", 200
@@ -65,6 +62,10 @@ if __name__ == "__main__":
         application.bot.set_webhook(url=webhook_url)
         logger.info(f"Webhook successfully set to {webhook_url}")
 
+        # Start the application in a background loop
+        asyncio.run(application.initialize())
+        asyncio.create_task(application.start())
+        
         # Run the Flask app
         app.run(host="0.0.0.0", port=5000)
     except Exception as e:
