@@ -1,87 +1,34 @@
-import asyncio
-from flask import Flask, request
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import logging
+import os
+from telegram import Update, Bot
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
-# Replace with your bot token
-BOT_TOKEN = "6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw"
+# Define a function to handle the /start command
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Hello! I am your Telegram bot.')
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Define a function to handle the /help command
+def help_command(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('I am here to help you.')
 
-# Flask app
-app = Flask(__name__)
+# Main function to set up the bot
+def main():
+    # Replace with your actual Telegram Bot API token
+    bot_token = '6227369198:AAHgS6-0A8tJaSRLrgE1gaq4z93AEbB-SMw'
+    updater = Updater(bot_token)
 
-# Telegram Bot Application
-application = Application.builder().token(BOT_TOKEN).build()
+    dispatcher = updater.dispatcher
 
-# Event loop for the application
-loop = asyncio.get_event_loop()
+    # Register command handlers
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("help", help_command))
 
-# Command handler function
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle the /start command."""
-    try:
-        logger.info(f"Received /start command from user {update.effective_user.id}")
-        await update.message.reply_text("Hello! I am your Telegram bot. How can I help you?")
-    except Exception as e:
-        logger.error(f"Error in /start handler: {e}")
+    # Start the webhook to listen for messages
+    updater.start_webhook(listen='0.0.0.0',
+                          port=int(os.environ.get('PORT', 5000)),
+                          url_path=bot_token,
+                          webhook_url=f'https://telegrambot-dvnr.onrender.com/{bot_token}')
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo back the user's message."""
-    try:
-        user_message = update.message.text
-        logger.info(f"User said: {user_message}")
-        await update.message.reply_text(f"You said: {user_message}")
-    except Exception as e:
-        logger.error(f"Error in echo handler: {e}")
+    updater.idle()
 
-# Add handlers to application
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    """Handle incoming Telegram updates."""
-    if request.method == "POST":
-        try:
-            # Get the incoming update
-            json_update = request.get_json()
-            logger.info(f"Incoming update: {json_update}")
-
-            # Convert JSON to Update object
-            update = Update.de_json(json_update, application.bot)
-
-            # Schedule the update processing in the event loop
-            asyncio.run_coroutine_threadsafe(application.update_queue.put(update), loop)
-
-            logger.info(f"Update added to queue for user {update.effective_user.id}")
-        except Exception as e:
-            logger.error(f"Error processing update: {e}")
-        return "OK", 200
-
-def run_flask():
-    """Run the Flask application."""
-    app.run(host="0.0.0.0", port=5000)
-
-async def main():
-    """Set up the bot and start the Flask app."""
-    try:
-        # Set the webhook URL
-        webhook_url = "https://telegrambot-dvnr.onrender.com/webhook"
-        await application.bot.set_webhook(url=webhook_url)
-        logger.info(f"Webhook successfully set to {webhook_url}")
-
-        # Run the Flask app in a separate thread
-        loop.run_in_executor(None, run_flask)
-
-        # Start the bot application
-        await application.initialize()
-        await application.start()
-    except Exception as e:
-        logger.error(f"Failed to start the bot: {e}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    main()
