@@ -38,7 +38,7 @@ application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
 @app.route("/webhook", methods=["POST"])
-def webhook():
+async def webhook():
     """Handle incoming Telegram updates."""
     if request.method == "POST":
         try:
@@ -48,25 +48,30 @@ def webhook():
 
             # Convert JSON to Update object and put it into the queue
             update = Update.de_json(json_update, application.bot)
-            application.update_queue.put_nowait(update)
+            await application.update_queue.put(update)
 
             logger.info(f"Update added to queue for user {update.effective_user.id}")
         except Exception as e:
             logger.error(f"Error processing update: {e}")
         return "OK", 200
 
-if __name__ == "__main__":
+async def main():
+    """Set up the bot and webhook."""
     try:
         # Set the webhook URL
         webhook_url = "https://telegrambot-dvnr.onrender.com/webhook"
-        application.bot.set_webhook(url=webhook_url)
+        await application.bot.set_webhook(url=webhook_url)
         logger.info(f"Webhook successfully set to {webhook_url}")
 
         # Start the application in a background loop
-        asyncio.run(application.initialize())
-        asyncio.create_task(application.start())
-        
-        # Run the Flask app
-        app.run(host="0.0.0.0", port=5000)
+        await application.initialize()
+        await application.start()
     except Exception as e:
         logger.error(f"Failed to start the bot: {e}")
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+
+    # Run the Flask app
+    app.run(host="0.0.0.0", port=5000)
