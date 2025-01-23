@@ -50,22 +50,20 @@ def webhook():
             logger.error(f"Error processing update: {e}")
         return "OK", 200
 
-def main():
-    application = Application.builder().token(BOT_TOKEN).build()
+application = Application.builder().token(BOT_TOKEN).build()
 
     # Register command handlers
-    application.add_handler(CommandHandler("start", start))
-    #application.add_handler(CommandHandler("help", help_command))
+application.add_handler(CommandHandler("start", start))
+#application.add_handler(CommandHandler("help", help_command))
 
     # Register a message handler to echo all text messages
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
     # Start the bot
-    print("Bot is running... Press Ctrl+C to stop.")
-    application.run_polling()
+    #print("Bot is running... Press Ctrl+C to stop.")
+    #application.run_polling()
 
 if __name__ == "__main__":
-    main()
     try:
         # Set the webhook URL
         webhook_url = "https://telegrambot-dvnr.onrender.com/webhook"
@@ -74,6 +72,6 @@ if __name__ == "__main__":
 
         # Run the Flask app
         app.run(host="0.0.0.0", port=5000)
-        
+        application.run_polling()
     except Exception as e:
         logger.error(f"Failed to start the bot: {e}")
