@@ -10,6 +10,7 @@ blocked_words = {}
 def set_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
+    update.message.reply_text(update.effective_chat.get_member(user_id).status)
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator', 'owner']:
         update.message.reply_text('Please send the blocked words separated by commas.')
         context.user_data['waiting_for_words'] = True
