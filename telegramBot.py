@@ -25,7 +25,12 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     if context.user_data.get('waiting_for_words'):
         words = update.message.text.lower().split(',')
-        blocked_words[chat_id] = [word.strip() for word in words]
+        if not blocked_words:
+            blocked_words[chat_id] = [word.strip() for word in words]
+        elif chat_id not in blocked_words:
+            blocked_words[chat_id] = [word.strip() for word in words]
+        else:
+            blocked_words[chat_id].extend(word.strip() for word in words)
         update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}')
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
