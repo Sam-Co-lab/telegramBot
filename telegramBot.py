@@ -11,7 +11,7 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator', 'owner']:
-        return next_mess()
+        return next_mess(update: Update, context: CallbackContext)
         #words = ' '.join(context.args).split(',')
         #chat_id = update.effective_chat.id
         #words = ' '.join(update.message.text.lower()).split(',')
