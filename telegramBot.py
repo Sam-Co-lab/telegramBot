@@ -10,8 +10,9 @@ blocked_words = {}
 def set_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
+    if update.effective_chat.get_member(user_id).status in ['administrator', 'creator', 'owner']:
         #words = ' '.join(context.args).split(',')
+        chat_id = update.effective_chat.id
         words = ' '.join(update.message.text.lower()).split(',')
         blocked_words[chat_id] = [word.strip() for word in words]
         update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}')
@@ -29,7 +30,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     if chat_id in blocked_words:
         for word in blocked_words[chat_id]:
             if word in message_text:
-                context.bot.kick_chat_member(chat_id, user_id, until_date=time.time() + 7200)
+                context.bot.kick_chat_member(chat_id, user_id, until_date=time.time() + 7200, revoke_messages=True)
                 update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a black-listed word')
                 print(f'User {user_id} blocked for using a blck-listed word in chat {chat_id}')
                 return
