@@ -17,8 +17,12 @@ app = Flask(__name__)
 # Telegram Bot Application
 application = Application.builder().token(BOT_TOKEN).build()
 
+# Event loop for the application
+loop = asyncio.get_event_loop()
+
 # Command handler function
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle the /start command."""
     try:
         logger.info(f"Received /start command from user {update.effective_user.id}")
         await update.message.reply_text("Hello! I am your Telegram bot. How can I help you?")
@@ -26,6 +30,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.error(f"Error in /start handler: {e}")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Echo back the user's message."""
     try:
         user_message = update.message.text
         logger.info(f"User said: {user_message}")
@@ -49,8 +54,8 @@ def webhook():
             # Convert JSON to Update object
             update = Update.de_json(json_update, application.bot)
 
-            # Schedule the update processing asynchronously
-            asyncio.create_task(application.update_queue.put(update))
+            # Schedule the update processing in the event loop
+            asyncio.run_coroutine_threadsafe(application.update_queue.put(update), loop)
 
             logger.info(f"Update added to queue for user {update.effective_user.id}")
         except Exception as e:
@@ -62,18 +67,17 @@ def run_flask():
     app.run(host="0.0.0.0", port=5000)
 
 async def main():
-    """Set up the bot and webhook."""
+    """Set up the bot and start the Flask app."""
     try:
         # Set the webhook URL
         webhook_url = "https://telegrambot-dvnr.onrender.com/webhook"
         await application.bot.set_webhook(url=webhook_url)
         logger.info(f"Webhook successfully set to {webhook_url}")
 
-        # Start the Flask app in a separate thread
-        loop = asyncio.get_event_loop()
+        # Run the Flask app in a separate thread
         loop.run_in_executor(None, run_flask)
 
-        # Initialize and run the bot application
+        # Start the bot application
         await application.initialize()
         await application.start()
     except Exception as e:
