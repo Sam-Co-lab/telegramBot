@@ -11,9 +11,9 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator', 'owner']:
-        #words = ' '.join(context.args).split(',')
-        chat_id = update.effective_chat.id
-        words = ' '.join(update.message.text.lower()).split(',')
+        words = ' '.join(context.args).split(',')
+        #chat_id = update.effective_chat.id
+        #words = ' '.join(update.message.text.lower()).split(',')
         blocked_words[chat_id] = [word.strip() for word in words]
         update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}')
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
