@@ -65,6 +65,7 @@ def main():
     application.run_polling()
 
 if __name__ == "__main__":
+    main()
     try:
         # Set the webhook URL
         webhook_url = "https://telegrambot-dvnr.onrender.com/webhook"
@@ -74,6 +75,5 @@ if __name__ == "__main__":
         # Run the Flask app
         app.run(host="0.0.0.0", port=5000)
         
-        main()
     except Exception as e:
         logger.error(f"Failed to start the bot: {e}")
