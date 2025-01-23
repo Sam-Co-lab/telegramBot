@@ -14,9 +14,7 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
         if 'waiting_for_words' not in context.user_data:
             update.message.reply_text('Please send the blocked words separated by commas.')
             context.user_data['waiting_for_words'] = True
-            return
-        
-        if context.user_data['waiting_for_words']:
+        else:
             words = update.message.text.lower().split(',')
             blocked_words[chat_id] = [word.strip() for word in words]
             update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}')
