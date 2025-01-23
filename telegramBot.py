@@ -51,7 +51,7 @@ def webhook():
         return "OK", 200
 
 def main():
-    application = Application.builder().token(token).build()
+    application = Application.builder().token(BOT_TOKEN).build()
 
     # Register command handlers
     application.add_handler(CommandHandler("start", start))
