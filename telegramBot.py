@@ -26,8 +26,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.error(f"Error in /start handler: {e}")
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_message = update.message.text
-    await update.message.reply_text(f"You said: {user_message}")
+    try:
+        user_message = update.message.text
+        logger.info(f"User said: {user_message}")
+        await update.message.reply_text(f"You said: {user_message}")
+    except Exception as e:
+        logger.error(f"Error in echo handler: {e}")
 
 # Add handlers to application
 application.add_handler(CommandHandler("start", start))
