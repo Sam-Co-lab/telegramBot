@@ -20,16 +20,19 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
     context.user_data['mess_to_del'] = update.message.message_id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
         #update.message.reply_text(user_id)
-        update.message.reply_text('Please send the words to be blacklisted, separated by commas.')
+        reply_message = update.message.reply_text('Please send the words to be blacklisted, separated by commas.')
         context.user_data['waiting_for_words'] = True
+        context.user_data['reply_mess_to_del'] = reply_message.message_id
         # Add a handler to catch the next message and call update_blocked_words
         context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
     else:
         update.message.reply_text('Only admins can blacklist words.')
 def update_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
+    message_id = update.message.message_id
     if context.user_data.get('waiting_for_words'):
         words = update.message.text.lower().split(',')
+        context.bot.delete_message(chat_id, message_id)
         if not blocked_words:
             blocked_words[chat_id] = [word.strip() for word in words]
         elif chat_id not in blocked_words:
@@ -37,10 +40,14 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         else:
             blocked_words[chat_id].extend(word.strip() for word in words)
         mess_to_del = context.user_data.get('mess_to_del')
+        reply_mess_to_del = context.user_data.get('reply_mess_to_del')
         if mess_to_del:
             context.bot.delete_message(chat_id, mess_to_del)
             context.user_data['mess_to_del'] = None
-        update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}', timeout=time.time() + 20)
+        if reply_mess_to_del:
+            context.bot.delete_message(chat_id, reply_mess_to_del)
+            context.user_data['reply_mess_to_del'] = None
+        update.message.reply_text(f'Blacklisted words: {", ".join(blocked_words[chat_id])}')
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
         # Remove the handler after updating the blocked words
@@ -82,11 +89,11 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
 
 # Define a function to handle the /start command
 def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Hello! I am your Telegram bot.')
+    update.message.reply_text('Hello! \nI am LISA, your group manager bot.', allow_sending_without_reply=True)
 
 # Define a function to handle the /help command
 def help_command(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('I am here to help you.')
+    update.message.reply_text('For any complaints or reports, contact developer')
 
 # Main function to set up the bot
 def main():
