@@ -5,7 +5,6 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 
 # Dictionary to store blocked words for each chat
 blocked_words = {}
-mess_to_del = ''
 
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     if blocked_words:
@@ -18,7 +17,7 @@ def show_blocked_words(update: Update, context: CallbackContext) -> None:
 def set_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    mess_to_del = update.message.message_id
+    context.user_data['mess_to_del'] = update.message.message_id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
         #update.message.reply_text(user_id)
         update.message.reply_text('Please send the words to be blacklisted, separated by commas.')
@@ -37,8 +36,10 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
             blocked_words[chat_id] = [word.strip() for word in words]
         else:
             blocked_words[chat_id].extend(word.strip() for word in words)
-        context.bot.delete_message(chat_id, mess_to_del)
-        mess_to_del = ''
+        mess_to_del = context.user_data.get('mess_to_del')
+        if mess_to_del:
+            context.bot.delete_message(chat_id, mess_to_del)
+            context.user_data['mess_to_del'] = None
         update.message.reply_text(f'Blocked words set: {", ".join(blocked_words[chat_id])}', timeout=time.time() + 20)
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
