@@ -1,6 +1,6 @@
 import os
 import time
-from telegram import Update, Bot
+from telegram import Update, Bot, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 # Dictionary to store blocked words for each chat
