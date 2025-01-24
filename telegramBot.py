@@ -54,7 +54,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     if chat_id in blocked_words:
         for word in blocked_words[chat_id]:
             if word in message_text:
-                context.bot.restrict_chat_member(chat_id, user_id,permissions=permission , until_date=time.time() + 300, revoke_messages=True)
+                context.bot.restrict_chat_member(chat_id, user_id,permissions=permission , until_date=time.time() + 300)
                 update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a blacklisted word')
                 print(f'User {user_id} blocked for using a blck-listed word in chat {chat_id}')
                 return
