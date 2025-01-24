@@ -48,7 +48,15 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     message_text = update.message.text.lower()
 
-    permission = {"can_send_messages":"False", "can_send_media_messages":"False", "can_send_polls":"False", "can_send_other_messages":"False", "can_add_web_page_previews":"False", "can_change_info":"False", "can_pin_messages":"False"}
+    permission = ChatPermissions(
+        can_send_messages=False,
+        can_send_media_messages=False,
+        can_send_polls=False,
+        can_send_other_messages=False,
+        can_add_web_page_previews=False,
+        can_change_info=False,
+        can_invite_users=False,
+        can_pin_messages=False)
 
     # Check for blocked words
     if chat_id in blocked_words:
