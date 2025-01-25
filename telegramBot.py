@@ -158,7 +158,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
 
     # Check for links
     if 'http://' in message_text or 'https://' in message_text:
-        context.bot.ban_chat_member(chat_id, user_id, until_date=time.time() + 7200)
+        context.bot.restrict_chat_member(chat_id, user_id,permissions=permission , until_date=time.time() + 300)
         update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for sharing a link.')
         print(f'User {user_id} blocked for sharing a link in chat {chat_id}')
 
