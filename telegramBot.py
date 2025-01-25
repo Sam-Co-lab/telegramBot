@@ -37,7 +37,8 @@ def update_blocked(new_data):
     payload = {
         "message": "Updated blocked.pkl",
         "content": new_content,
-        "sha": sha  # Required to update the file
+        "sha": sha,  # Required to update the file
+        "branch": "main"
     }
     print("Payload:", payload)  # Debug print
     
