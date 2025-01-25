@@ -45,12 +45,23 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
     if context.user_data.get('waiting_for_words'):
         words = update.message.text.lower().split(',')
         context.bot.delete_message(chat_id, message_id)
-        if not blocked_words:
-            blocked_words[chat_id] = [word.strip() for word in words]
-        elif chat_id not in blocked_words:
+        
+        if os.path.exists('blocked.pkl'):
+            with open('blocked.pkl', 'rb') as bfile:
+                try:
+                    blocked_words = pickle.load(bfile)
+                except (EOFError, pickle.UnpicklingError):
+                    blocked_words = {}
+                finally:
+                    bfile.close()
+        else:
+            blocked_words = {}
+        
+        if chat_id not in blocked_words:
             blocked_words[chat_id] = [word.strip() for word in words]
         else:
             blocked_words[chat_id].extend(word.strip() for word in words)
+
         mess_to_del = context.user_data.get('mess_to_del')
         reply_mess_to_del = context.user_data.get('reply_mess_to_del')
         if mess_to_del:
@@ -59,24 +70,18 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         if reply_mess_to_del:
             context.bot.delete_message(chat_id, reply_mess_to_del)
             context.user_data['reply_mess_to_del'] = None
-        
-        if os.path.exists('blocked.pkl'):
-            with open('blocked.pkl', 'ab') as bfile:
-                try:
-                    pickle.dump(blocked_words, bfile)
-                except (EOFError, pickle.UnpicklingError):
-                    pass
-                    print('cant write in file')
-                finally:
-                    bfile.close()
-    else:
-        blocked_words = {}
-        update.message.reply_text(f'Blacklisted words: {", ".join(blocked_words[chat_id])}')
+
+        with open('blocked.pkl', 'wb') as bfile:
+            pickle.dump(blocked_words, bfile)
+
+        try:
+            update.message.reply_text(f'Blacklisted words: {", ".join(blocked_words[chat_id])}')
+        except BadRequest as e:
+            print(f"BadRequest error: {e.message}")
+
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
-        # Remove the handler after updating the blocked words
         context.dispatcher.remove_handler_by_group(1)
-
 
 # Function to monitor messages and block users
 def monitor_chats(update: Update, context: CallbackContext) -> None:
