@@ -20,15 +20,18 @@ def update_blocked(new_data):
     
     # Get the current file content and its SHA
     response = requests.get(url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    print("GET response status code:", response.status_code)  # Debug print
     if response.status_code == 200:
         file_info = response.json()
         sha = file_info["sha"]
+        print("Current SHA:", sha)  # Debug print
     else:
         print("Failed to fetch file info:", response.status_code, response.json())
         return
     
     # Encode the new data to Base64
-    new_content = base64.b64encode(new_data).decode("utf-8")
+    new_content = base64.b64encode(pickle.dumps(new_data)).decode("utf-8")
+    print("Encoded new content:", new_content)  # Debug print
     
     # Prepare the request payload
     payload = {
@@ -36,9 +39,11 @@ def update_blocked(new_data):
         "content": new_content,
         "sha": sha  # Required to update the file
     }
+    print("Payload:", payload)  # Debug print
     
     # Make the PUT request to update the file
     response = requests.put(url, json=payload, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    print("PUT response status code:", response.status_code)  # Debug print
     if response.status_code == 200:
         print("File updated successfully!")
     else:
@@ -50,11 +55,13 @@ def read_blocked():
     
     # Get the current file content
     response = requests.get(url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    print("GET response status code (read_blocked):", response.status_code)  # Debug print
     if response.status_code == 200:
         file_info = response.json()
         encoded_content = file_info["content"]
         file_content = base64.b64decode(encoded_content)  # Decode Base64 content
         blocked_words = pickle.loads(file_content)  # Unpickle the data
+        print("Blocked words (read_blocked):", blocked_words)  # Debug print
     else:
         print("Failed to fetch file info:", response.status_code, response.json())
 
