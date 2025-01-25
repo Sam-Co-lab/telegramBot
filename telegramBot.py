@@ -78,7 +78,8 @@ def block_user(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
-        update.message.reply_text("Please tag the user you want to block using @username")
+        message = update.message.reply_text("Please tag the user you want to block using @username")
+        context.user_data['mess_to_del'] = message.message_id
         context.user_data['waiting_for_username'] = True
     else:
         update.message.reply_text("Only admins can block users.")
@@ -89,6 +90,9 @@ def handle_username(update: Update, context: CallbackContext) -> None:
         tagged_user = update.message.text
         context.user_data['tagged_user'] = tagged_user
         context.user_data['waiting_for_username'] = False
+
+        message_id = update.message.message_id
+        context.user_data['tagged_message_id'] = message_id
 
         keyboard = [
             [InlineKeyboardButton("Kick User", callback_data='kick')],
@@ -114,8 +118,11 @@ def handle_button(update: Update, context: CallbackContext) -> None:
         reply_markup = InlineKeyboardMarkup(keyboard)
         query.edit_message_text(text="Choose the time for which the user should be restricted:", reply_markup=reply_markup)
     else:
-        query.edit_message_text(text=f"User {context.user_data['tagged_user']} will be kicked.")
-        # Add your kick user logic here
+        chat_id = query.message.chat_id
+        tagged_user_id = query.message.entities[0].user.id
+        context.bot.kick_chat_member(chat_id, tagged_user_id)
+        query.edit_message_text(text=f"User {context.user_data['tagged_user']} has been kicked.")
+        delete_messages(context, query.message.chat_id)
 
 # Function to handle the restriction duration
 def handle_duration(update: Update, context: CallbackContext) -> None:
@@ -141,7 +148,15 @@ def handle_duration(update: Update, context: CallbackContext) -> None:
 
     context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
     query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
+    delete_messages(context, query.message.chat_id)
 
+# Function to delete specific messages
+def delete_messages(context: CallbackContext, chat_id: int) -> None:
+    try:
+        context.bot.delete_message(chat_id, context.user_data['mess_to_del'])
+        context.bot.delete_message(chat_id, context.user_data['tagged_message_id'])
+    except BadRequest as e:
+        print(f"BadRequest error while deleting messages: {e.message}")
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     blocked_words = read_blocked()
     chat_id = update.effective_chat.id
