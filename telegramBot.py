@@ -7,7 +7,7 @@ from telegram import Update, Bot, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
 
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = "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"
 REPO_OWNER = "Samn-Co-lab"
 REPO_NAME = "Data"
 FILE_PATH = "blocked.pkl"
