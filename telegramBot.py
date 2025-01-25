@@ -1,37 +1,65 @@
 import os
 import time
+import requests
+import base64
 import pickle
 from telegram import Update, Bot, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
 
-if os.path.exists('blocked.pkl'):
-    with open('blocked.pkl', 'rb') as bfile:
-        try:
-            blocked_words = pickle.load(bfile)
-        except (EOFError, pickle.UnpicklingError):
-            blocked_words = {}
-        finally:
-            bfile.close()
-else:
-    blocked_words = {}
-    print("file doesn't exist")
+GITHUB_TOKEN = "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"
+REPO_OWNER = "Samn-Co-lab"
+REPO_NAME = "Data"
+FILE_PATH = "blocked.pkl"
+
 
 # Dictionary to store blocked words for each chat
 blocked_words = {}
-def show_blocked_words(update: Update, context: CallbackContext) -> None:
-    if os.path.exists('blocked.pkl'):
-        with open('blocked.pkl', 'rb') as bfile:
-            try:
-                blocked_words = pickle.load(bfile)
-            except (EOFError, pickle.UnpicklingError):
-                blocked_words = {}
-            finally:
-                bfile.close()
+def update_blocked(new_data):
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+    
+    # Get the current file content and its SHA
+    response = requests.get(url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    if response.status_code == 200:
+        file_info = response.json()
+        sha = file_info["sha"]
     else:
-        blocked_words = {}
-        print("file doesn't exist")
+        print("Failed to fetch file info:", response.status_code, response.json())
+        return
+    
+    # Encode the new data to Base64
+    new_content = base64.b64encode(new_data).decode("utf-8")
+    
+    # Prepare the request payload
+    payload = {
+        "message": "Updated blocked.pkl",
+        "content": new_content,
+        "sha": sha  # Required to update the file
+    }
+    
+    # Make the PUT request to update the file
+    response = requests.put(url, json=payload, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    if response.status_code == 200:
+        print("File updated successfully!")
+    else:
+        print("Failed to update file:", response.status_code, response.json())
 
+# Function to read the file from GitHub
+def read_blocked():
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
+    
+    # Get the current file content
+    response = requests.get(url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    if response.status_code == 200:
+        file_info = response.json()
+        encoded_content = file_info["content"]
+        file_content = base64.b64decode(encoded_content)  # Decode Base64 content
+        blocked_words = pickle.loads(file_content)  # Unpickle the data
+    else:
+        print("Failed to fetch file info:", response.status_code, response.json())
+
+def show_blocked_words(update: Update, context: CallbackContext) -> None:
+    read_blocked()
     chat_id = update.effective_chat.id
     if chat_id in blocked_words:
         update.message.reply_text(str(blocked_words[chat_id])[1:-1])
@@ -57,16 +85,7 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         words = update.message.text.lower().split(',')
         context.bot.delete_message(chat_id, message_id)
         
-        if os.path.exists('blocked.pkl'):
-            with open('blocked.pkl', 'rb') as bfile:
-                try:
-                    blocked_words = pickle.load(bfile)
-                except (EOFError, pickle.UnpicklingError):
-                    blocked_words = {}
-                finally:
-                    bfile.close()
-        else:
-            blocked_words = {}
+        read_blocked()
         
         if chat_id not in blocked_words:
             blocked_words[chat_id] = [word.strip() for word in words]
@@ -82,8 +101,7 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
             context.bot.delete_message(chat_id, reply_mess_to_del)
             context.user_data['reply_mess_to_del'] = None
 
-        with open('blocked.pkl', 'wb') as bfile:
-            pickle.dump(blocked_words, bfile)
+        update_blocked(blocked_words)
 
         try:
             update.message.reply_text(f'Blacklisted words: {", ".join(blocked_words[chat_id])}')
@@ -101,16 +119,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     message_text = update.message.text.lower()
     message_id = update.message.message_id
 
-    if os.path.exists('blocked.pkl'):
-        with open('blocked.pkl', 'rb') as bfile:
-            try:
-                blocked_words = pickle.load(bfile)
-            except (EOFError, pickle.UnpicklingError):
-                blocked_words = {}
-            finally:
-                bfile.close()
-    else:
-        blocked_words = {}
+    read_blocked()
 
     permission = ChatPermissions(
         can_send_messages=False,
