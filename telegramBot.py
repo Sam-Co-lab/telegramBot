@@ -95,12 +95,22 @@ def handle_username(update: Update, context: CallbackContext) -> None:
         message_id = update.message.message_id
         context.user_data['tagged_message_id'] = message_id
 
-        # Extract the user ID from the username
-        match = re.search(r'@(\w+)', tagged_user)
-        if match:
-            username = match.group(1)
-            user = context.bot.get_chat_member(update.effective_chat.id, username).user
-            context.user_data['tagged_user_id'] = user.id
+        # Extract the user ID from the username mentioned in the message
+        entities = update.message.entities
+        if entities:
+            for entity in entities:
+                if entity.type == 'mention':
+                    username = update.message.text[entity.offset:entity.offset + entity.length].strip('@')
+                    try:
+                        user = context.bot.get_chat_member(update.message.chat.id, username).user
+                        context.user_data['tagged_user_id'] = user.id
+                    except BadRequest as e:
+                        update.message.reply_text(f"Failed to get user ID. Error: {e.message}")
+                        return
+                    break
+            else:
+                update.message.reply_text("No valid username found in the message.")
+                return
         else:
             update.message.reply_text("Invalid username format. Please use @username.")
             return
