@@ -157,12 +157,6 @@ def handle_duration(update: Update, context: CallbackContext) -> None:
     context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
     query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
 
-# Add the handlers for the new functions
-dispatcher.add_handler(CommandHandler("blockuser", block_user))
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_username), group=1)
-dispatcher.add_handler(CallbackQueryHandler(handle_button))
-dispatcher.add_handler(CallbackQueryHandler(handle_duration, pattern=r'^\d+$'))
-
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     blocked_words = read_blocked()
     chat_id = update.effective_chat.id
