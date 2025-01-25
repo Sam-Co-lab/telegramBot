@@ -112,7 +112,10 @@ def handle_username(update: Update, context: CallbackContext) -> None:
         ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text("Do you want to kick the user or restrict for some time?", reply_markup=reply_markup)
+        try:
+            update.message.reply_text("Do you want to kick the user or restrict for some time?", reply_markup=reply_markup)
+        except BadRequest as e:
+            print(f"BadRequest error: {e.message}")
 
         context.dispatcher.remove_handler(MessageHandler, group=1)
 
@@ -147,7 +150,7 @@ def handle_duration(update: Update, context: CallbackContext) -> None:
     permissions = ChatPermissions(
         can_send_messages=False,
         can_send_media_messages=False,
-        can_send_polls=False,
+        can send_polls=False,
         can_send_other_messages=False,
         can_add_web_page_previews=False,
         can_change_info=False,
