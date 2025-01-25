@@ -1,5 +1,6 @@
 import os
 import time
+import pickle
 from telegram import Update, Bot, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
@@ -7,6 +8,9 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 blocked_words = {}
 
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
+    bfile = open('blocked.pkl', 'rb')
+    blocked_words = pickle.load(bfile)
+    bfile.close()
     if blocked_words:
         chat_id = update.effective_chat.id
         update.message.reply_text(str(blocked_words[chat_id])[1:-1])
@@ -47,6 +51,10 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         if reply_mess_to_del:
             context.bot.delete_message(chat_id, reply_mess_to_del)
             context.user_data['reply_mess_to_del'] = None
+
+        bfile = open('blocked.pkl', 'ab')
+        pickle.dump(blocked_words, bfile)
+        bfile.close()
         update.message.reply_text(f'Blacklisted words: {", ".join(blocked_words[chat_id])}')
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
@@ -60,6 +68,10 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     message_text = update.message.text.lower()
     message_id = update.message.message_id
+
+    bfile = open('blocked.pkl', 'rb')
+    blocked_words = pickle.load(bfile)
+    bfile.close()
 
     permission = ChatPermissions(
         can_send_messages=False,
