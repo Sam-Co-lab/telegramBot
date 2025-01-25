@@ -77,34 +77,18 @@ def read_blocked():
 def block_user(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    context.user_data['mess_to_del'] = update.message.message_id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
-        reply_message = update.message.reply_text("Please tag the user you want to block using @username")
+        update.message.reply_text("Please tag the user you want to block using @username")
         context.user_data['waiting_for_username'] = True
-        context.user_data['reply_mess_to_del'] = reply_message.message_id
-        context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_username), group=1)
     else:
         update.message.reply_text("Only admins can block users.")
 
 # Function to handle the username input
 def handle_username(update: Update, context: CallbackContext) -> None:
-    chat_id = update.effective_chat.id
-    message_id = update.message.message_id
     if context.user_data.get('waiting_for_username'):
         tagged_user = update.message.text
-        context.bot.delete_message(chat_id, message_id)
-
         context.user_data['tagged_user'] = tagged_user
         context.user_data['waiting_for_username'] = False
-
-        mess_to_del = context.user_data.get('mess_to_del')
-        reply_mess_to_del = context.user_data.get('reply_mess_to_del')
-        if mess_to_del:
-            context.bot.delete_message(chat_id, mess_to_del)
-            context.user_data['mess_to_del'] = None
-        if reply_mess_to_del:
-            context.bot.delete_message(chat_id, reply_mess_to_del)
-            context.user_data['reply_mess_to_del'] = None
 
         keyboard = [
             [InlineKeyboardButton("Kick User", callback_data='kick')],
@@ -116,8 +100,6 @@ def handle_username(update: Update, context: CallbackContext) -> None:
             update.message.reply_text("Do you want to kick the user or restrict for some time?", reply_markup=reply_markup)
         except BadRequest as e:
             print(f"BadRequest error: {e.message}")
-
-        context.dispatcher.remove_handler(MessageHandler, group=1)
 
 # Function to handle the button presses
 def handle_button(update: Update, context: CallbackContext) -> None:
