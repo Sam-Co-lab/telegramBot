@@ -8,13 +8,23 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 blocked_words = {'abcd':['a', 's']}
 with open("blocked.pkl", "wb") as f:
     pickle.dump(blocked_words, f)
+    f.close()
 
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
-    bfile = open('blocked.pkl', 'rb')
-    blocked_words = pickle.load(bfile)
-    bfile.close()
-    if blocked_words:
-        chat_id = update.effective_chat.id
+    if os.path.exists('blocked.pkl'):
+        with open('blocked.pkl', 'rb') as bfile:
+            try:
+                blocked_words = pickle.load(bfile)
+            except (EOFError, pickle.UnpicklingError):
+                blocked_words = {}
+            finally:
+                bfile.close()
+    else:
+        blocked_words = {}
+        print("file doesn't exist")
+
+    chat_id = update.effective_chat.id
+    if chat_id in blocked_words:
         update.message.reply_text(str(blocked_words[chat_id])[1:-1])
     else:
         update.message.reply_text("No word blacklisted YET...")
