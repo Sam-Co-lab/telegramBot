@@ -119,10 +119,13 @@ def handle_button(update: Update, context: CallbackContext) -> None:
         query.edit_message_text(text="Choose the time for which the user should be restricted:", reply_markup=reply_markup)
     else:
         chat_id = query.message.chat_id
-        tagged_user_id = query.message.entities[0].user.id
-        context.bot.kick_chat_member(chat_id, tagged_user_id)
-        query.edit_message_text(text=f"User {context.user_data['tagged_user']} has been kicked.")
-        delete_messages(context, query.message.chat_id)
+        if query.message.entities:
+            tagged_user_id = query.message.entities[0].user.id
+            context.bot.kick_chat_member(chat_id, tagged_user_id)
+            query.edit_message_text(text=f"User {context.user_data['tagged_user']} has been kicked.")
+            delete_messages(context, query.message.chat_id)
+        else:
+            query.edit_message_text(text="Failed to kick user. No user entity found in the message.")
 
 # Function to handle the restriction duration
 def handle_duration(update: Update, context: CallbackContext) -> None:
@@ -134,21 +137,24 @@ def handle_duration(update: Update, context: CallbackContext) -> None:
     
     chat_id = query.message.chat_id
     tagged_user = context.user_data['tagged_user']
-    tagged_user_id = query.message.entities[0].user.id
+    if query.message.entities:
+        tagged_user_id = query.message.entities[0].user.id
 
-    permissions = ChatPermissions(
-        can_send_messages=False,
-        can_send_media_messages=False,
-        can_send_polls=False,
-        can_send_other_messages=False,
-        can_add_web_page_previews=False,
-        can_change_info=False,
-        can_invite_users=False,
-        can_pin_messages=False)
+        permissions = ChatPermissions(
+            can_send_messages=False,
+            can_send_media_messages=False,
+            can_send_polls=False,
+            can_send_other_messages=False,
+            can_add_web_page_previews=False,
+            can_change_info=False,
+            can_invite_users=False,
+            can_pin_messages=False)
 
-    context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
-    query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
-    delete_messages(context, query.message.chat_id)
+        context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
+        query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
+        delete_messages(context, query.message.chat_id)
+    else:
+        query.edit_message_text(text="Failed to restrict user. No user entity found in the message.")
 
 # Function to delete specific messages
 def delete_messages(context: CallbackContext, chat_id: int) -> None:
