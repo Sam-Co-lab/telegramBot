@@ -77,28 +77,44 @@ def read_blocked():
 def block_user(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    
-    # Check if the user is an administrator
+    context.user_data['mess_to_del'] = update.message.message_id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
-        update.message.reply_text("Please tag the user you want to block using @username")
+        reply_message = update.message.reply_text("Please tag the user you want to block using @username")
         context.user_data['waiting_for_username'] = True
+        context.user_data['reply_mess_to_del'] = reply_message.message_id
+        context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_username), group=1)
     else:
         update.message.reply_text("Only admins can block users.")
 
 # Function to handle the username input
 def handle_username(update: Update, context: CallbackContext) -> None:
+    chat_id = update.effective_chat.id
+    message_id = update.message.message_id
     if context.user_data.get('waiting_for_username'):
         tagged_user = update.message.text
+        context.bot.delete_message(chat_id, message_id)
+
         context.user_data['tagged_user'] = tagged_user
         context.user_data['waiting_for_username'] = False
-        
+
+        mess_to_del = context.user_data.get('mess_to_del')
+        reply_mess_to_del = context.user_data.get('reply_mess_to_del')
+        if mess_to_del:
+            context.bot.delete_message(chat_id, mess_to_del)
+            context.user_data['mess_to_del'] = None
+        if reply_mess_to_del:
+            context.bot.delete_message(chat_id, reply_mess_to_del)
+            context.user_data['reply_mess_to_del'] = None
+
         keyboard = [
             [InlineKeyboardButton("Kick User", callback_data='kick')],
             [InlineKeyboardButton("Restrict User", callback_data='restrict')]
         ]
-        
+
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text("Do you want to kick the user or restrict for some time?", reply_markup=reply_markup)
+
+        context.dispatcher.remove_handler(MessageHandler, group=1)
 
 # Function to handle the button presses
 def handle_button(update: Update, context: CallbackContext) -> None:
@@ -109,8 +125,8 @@ def handle_button(update: Update, context: CallbackContext) -> None:
     context.user_data['action'] = action
     
     if action == 'restrict':
-        keyboard = [[KeyboardButton(f"{i} hours")] for i in range(1, 25)]
-        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+        keyboard = [[InlineKeyboardButton(f"{i} hours", callback_data=f"{i}") for i in range(1, 25)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
         query.edit_message_text(text="Choose the time for which the user should be restricted:", reply_markup=reply_markup)
     else:
         query.edit_message_text(text=f"User {context.user_data['tagged_user']} will be kicked.")
@@ -118,28 +134,34 @@ def handle_button(update: Update, context: CallbackContext) -> None:
 
 # Function to handle the restriction duration
 def handle_duration(update: Update, context: CallbackContext) -> None:
-    if context.user_data.get('action') == 'restrict':
-        duration_text = update.message.text
-        duration_hours = int(duration_text.split()[0])
-        until_date = time.time() + duration_hours * 3600
-        
-        chat_id = update.effective_chat.id
-        tagged_user = context.user_data['tagged_user']
-        # Use the tagged user's ID instead of the username if available
-        tagged_user_id = update.message.entities[0].user.id
-        
-        permissions = ChatPermissions(
-            can_send_messages=False,
-            can_send_media_messages=False,
-            can_send_polls=False,
-            can_send_other_messages=False,
-            can_add_web_page_previews=False,
-            can_change_info=False,
-            can_invite_users=False,
-            can_pin_messages=False)
+    query = update.callback_query
+    query.answer()
+    
+    duration_hours = int(query.data)
+    until_date = time.time() + duration_hours * 3600
+    
+    chat_id = query.message.chat_id
+    tagged_user = context.user_data['tagged_user']
+    tagged_user_id = query.message.entities[0].user.id
 
-        context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
-        update.message.reply_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
+    permissions = ChatPermissions(
+        can_send_messages=False,
+        can_send_media_messages=False,
+        can_send_polls=False,
+        can_send_other_messages=False,
+        can_add_web_page_previews=False,
+        can_change_info=False,
+        can_invite_users=False,
+        can_pin_messages=False)
+
+    context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
+    query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
+
+# Add the handlers for the new functions
+dispatcher.add_handler(CommandHandler("blockuser", block_user))
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_username), group=1)
+dispatcher.add_handler(CallbackQueryHandler(handle_button))
+dispatcher.add_handler(CallbackQueryHandler(handle_duration, pattern=r'^\d+$'))
 
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     blocked_words = read_blocked()
@@ -253,9 +275,9 @@ def main():
     dispatcher.add_handler(CommandHandler("showblockedwords", show_blocked_words))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, monitor_chats))
     dispatcher.add_handler(CommandHandler("blockuser", block_user))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_username))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_username), group=1)
     dispatcher.add_handler(CallbackQueryHandler(handle_button))
-    dispatcher.add_handler(MessageHandler(Filters.regex(r'^\d+ hours$'), handle_duration))
+    dispatcher.add_handler(CallbackQueryHandler(handle_duration, pattern=r'^\d+$'))
 
     # Start the webhook to listen for messages
     updater.start_webhook(listen='0.0.0.0',
