@@ -93,6 +93,7 @@ def handle_username(update: Update, context: CallbackContext) -> None:
 
         message_id = update.message.message_id
         context.user_data['tagged_message_id'] = message_id
+        context.user_data['tagged_user_id'] = update.message.from_user.id
 
         keyboard = [
             [InlineKeyboardButton("Kick User", callback_data='kick')],
@@ -119,8 +120,8 @@ def handle_button(update: Update, context: CallbackContext) -> None:
         query.edit_message_text(text="Choose the time for which the user should be restricted:", reply_markup=reply_markup)
     else:
         chat_id = query.message.chat_id
-        if query.message.entities:
-            tagged_user_id = query.message.entities[0].user.id
+        tagged_user_id = context.user_data.get('tagged_user_id')
+        if tagged_user_id:
             context.bot.kick_chat_member(chat_id, tagged_user_id)
             query.edit_message_text(text=f"User {context.user_data['tagged_user']} has been kicked.")
             delete_messages(context, query.message.chat_id)
@@ -137,9 +138,8 @@ def handle_duration(update: Update, context: CallbackContext) -> None:
     
     chat_id = query.message.chat_id
     tagged_user = context.user_data['tagged_user']
-    if query.message.entities:
-        tagged_user_id = query.message.entities[0].user.id
-
+    tagged_user_id = context.user_data.get('tagged_user_id')
+    if tagged_user_id:
         permissions = ChatPermissions(
             can_send_messages=False,
             can_send_media_messages=False,
