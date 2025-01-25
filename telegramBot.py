@@ -61,8 +61,12 @@ def read_blocked():
         file_info = response.json()
         encoded_content = file_info["content"]
         file_content = base64.b64decode(encoded_content)  # Decode Base64 content
-        blocked_words = pickle.loads(file_content)  # Unpickle the data
-        print("Blocked words (read_blocked):", blocked_words)  # Debug print
+        try:
+            blocked_words = pickle.loads(file_content)  # Unpickle the data
+            print("Blocked words (read_blocked):", blocked_words)  # Debug print
+        except pickle.UnpicklingError as e:
+            print("UnpicklingError:", e)  # Debug print
+            blocked_words = {}
     else:
         print("Failed to fetch file info:", response.status_code, response.json())
 
