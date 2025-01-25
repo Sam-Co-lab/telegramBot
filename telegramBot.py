@@ -141,7 +141,6 @@ def handle_duration(update: Update, context: CallbackContext) -> None:
         context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
         update.message.reply_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
 
-
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     blocked_words = read_blocked()
     chat_id = update.effective_chat.id
