@@ -1,5 +1,6 @@
 import os
 import time
+import re
 import requests
 import base64
 import pickle
@@ -93,7 +94,16 @@ def handle_username(update: Update, context: CallbackContext) -> None:
 
         message_id = update.message.message_id
         context.user_data['tagged_message_id'] = message_id
-        context.user_data['tagged_user_id'] = update.message.from_user.id
+
+        # Extract the user ID from the username
+        match = re.search(r'@(\w+)', tagged_user)
+        if match:
+            username = match.group(1)
+            user = context.bot.get_chat_member(update.effective_chat.id, username).user
+            context.user_data['tagged_user_id'] = user.id
+        else:
+            update.message.reply_text("Invalid username format. Please use @username.")
+            return
 
         keyboard = [
             [InlineKeyboardButton("Kick User", callback_data='kick')],
@@ -177,13 +187,8 @@ def delete_messages(context: CallbackContext, chat_id: int) -> None:
         context.bot.delete_message(chat_id, context.user_data['tagged_message_id'])
     except BadRequest as e:
         print(f"BadRequest error while deleting messages: {e.message}")
-# Function to delete specific messages
-def delete_messages(context: CallbackContext, chat_id: int) -> None:
-    try:
-        context.bot.delete_message(chat_id, context.user_data['mess_to_del'])
-        context.bot.delete_message(chat_id, context.user_data['tagged_message_id'])
-    except BadRequest as e:
-        print(f"BadRequest error while deleting messages: {e.message}")
+
+
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     blocked_words = read_blocked()
     chat_id = update.effective_chat.id
