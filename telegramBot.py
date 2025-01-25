@@ -5,11 +5,7 @@ from telegram import Update, Bot, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 # Dictionary to store blocked words for each chat
-blocked_words = {'abcd':['a', 's']}
-with open("blocked.pkl", "wb") as f:
-    pickle.dump(blocked_words, f)
-    f.close()
-
+blocked_words = {}
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     if os.path.exists('blocked.pkl'):
         with open('blocked.pkl', 'rb') as bfile:
