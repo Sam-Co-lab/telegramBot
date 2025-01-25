@@ -5,6 +5,18 @@ from telegram import Update, Bot, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.error import BadRequest
 
+if os.path.exists('blocked.pkl'):
+    with open('blocked.pkl', 'rb') as bfile:
+        try:
+            blocked_words = pickle.load(bfile)
+        except (EOFError, pickle.UnpicklingError):
+            blocked_words = {}
+        finally:
+            bfile.close()
+else:
+    blocked_words = {}
+    print("file doesn't exist")
+
 # Dictionary to store blocked words for each chat
 blocked_words = {}
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
