@@ -64,9 +64,15 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
             context.bot.delete_message(chat_id, reply_mess_to_del)
             context.user_data['reply_mess_to_del'] = None
 
-        bfile = open('blocked.pkl', 'ab')
-        pickle.dump(blocked_words, bfile)
-        bfile.close()
+       if os.path.exists('blocked.pkl'):
+        with open('blocked.pkl', 'ab') as bfile:
+            try:
+                pickle.dump(blocked_words, bfile)
+            except (EOFError, pickle.UnpicklingError):
+                pass
+                print('cant write in file')
+    else:
+        blocked_words = {}
         update.message.reply_text(f'Blacklisted words: {", ".join(blocked_words[chat_id])}')
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
