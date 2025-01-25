@@ -60,6 +60,7 @@ def read_blocked():
     if response.status_code == 200:
         file_info = response.json()
         encoded_content = file_info["content"]
+        print("Encoded content fetched:", encoded_content)  # Debug print
         file_content = base64.b64decode(encoded_content)  # Decode Base64 content
         try:
             blocked_words = pickle.loads(file_content)  # Unpickle the data
@@ -70,8 +71,10 @@ def read_blocked():
     else:
         print("Failed to fetch file info:", response.status_code, response.json())
 
+    return blocked_words  # Ensure to return the blocked_words dictionary
+
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
-    read_blocked()
+    blocked_words = read_blocked()
     chat_id = update.effective_chat.id
     if chat_id in blocked_words:
         update.message.reply_text(str(blocked_words[chat_id])[1:-1])
@@ -97,7 +100,7 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         words = update.message.text.lower().split(',')
         context.bot.delete_message(chat_id, message_id)
         
-        read_blocked()
+        blocked_words = read_blocked()
         
         if chat_id not in blocked_words:
             blocked_words[chat_id] = [word.strip() for word in words]
@@ -131,7 +134,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     message_text = update.message.text.lower()
     message_id = update.message.message_id
 
-    read_blocked()
+    blocked_words = read_blocked()
 
     permission = ChatPermissions(
         can_send_messages=False,
