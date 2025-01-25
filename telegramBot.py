@@ -81,9 +81,14 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     message_text = update.message.text.lower()
     message_id = update.message.message_id
 
-    bfile = open('blocked.pkl', 'rb')
-    blocked_words = pickle.load(bfile)
-    bfile.close()
+    if os.path.exists('blocked.pkl'):
+        with open('blocked.pkl', 'rb') as bfile:
+            try:
+                blocked_words = pickle.load(bfile)
+            except (EOFError, pickle.UnpicklingError):
+                blocked_words = {}
+    else:
+        blocked_words = {}
 
     permission = ChatPermissions(
         can_send_messages=False,
