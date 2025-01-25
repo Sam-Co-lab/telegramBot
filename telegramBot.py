@@ -8,7 +8,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram.error import BadRequest
 
 GITHUB_TOKEN = "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"
-REPO_OWNER = "Samn-Co-lab"
+REPO_OWNER = "Sam-Co-lab"
 REPO_NAME = "Data"
 FILE_PATH = "blocked.pkl"
 
