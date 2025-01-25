@@ -44,11 +44,9 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     context.user_data['mess_to_del'] = update.message.message_id
     if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
-        #update.message.reply_text(user_id)
         reply_message = update.message.reply_text('Please send the words to be blacklisted, separated by commas.')
         context.user_data['waiting_for_words'] = True
         context.user_data['reply_mess_to_del'] = reply_message.message_id
-        # Add a handler to catch the next message and call update_blocked_words
         context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
     else:
         update.message.reply_text('Only admins can blacklist words.')
@@ -94,7 +92,7 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
 
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
         context.user_data['waiting_for_words'] = False
-        context.dispatcher.remove_handler_by_group(1)
+        context.dispatcher.remove_handler(MessageHandler, group=1)
 
 # Function to monitor messages and block users
 def monitor_chats(update: Update, context: CallbackContext) -> None:
