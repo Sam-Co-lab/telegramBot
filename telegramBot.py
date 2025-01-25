@@ -3,6 +3,7 @@ import time
 import pickle
 from telegram import Update, Bot, ChatPermissions
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.error import BadRequest
 
 # Dictionary to store blocked words for each chat
 blocked_words = {}
