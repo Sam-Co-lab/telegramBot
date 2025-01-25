@@ -63,14 +63,16 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         if reply_mess_to_del:
             context.bot.delete_message(chat_id, reply_mess_to_del)
             context.user_data['reply_mess_to_del'] = None
-
-       if os.path.exists('blocked.pkl'):
-        with open('blocked.pkl', 'ab') as bfile:
-            try:
-                pickle.dump(blocked_words, bfile)
-            except (EOFError, pickle.UnpicklingError):
-                pass
-                print('cant write in file')
+        
+        if os.path.exists('blocked.pkl'):
+            with open('blocked.pkl', 'ab') as bfile:
+                try:
+                    pickle.dump(blocked_words, bfile)
+                except (EOFError, pickle.UnpicklingError):
+                    pass
+                    print('cant write in file')
+                finally:
+                    bfile.close()
     else:
         blocked_words = {}
         update.message.reply_text(f'Blacklisted words: {", ".join(blocked_words[chat_id])}')
@@ -93,6 +95,8 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
                 blocked_words = pickle.load(bfile)
             except (EOFError, pickle.UnpicklingError):
                 blocked_words = {}
+            finally:
+                bfile.close()
     else:
         blocked_words = {}
 
