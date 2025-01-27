@@ -193,7 +193,7 @@ def rupdate_blocked_words(update: Update, context: CallbackContext) -> None:
         context.user_data['waiting_for_words'] = False
         context.dispatcher.remove_handler(MessageHandler, group=1)
 
-# Ensure monitor_chats is not called when unblocking words
+# Function to monitor messages and block users
 def monitor_chats(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
@@ -218,8 +218,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
             if word in message_text:
                 member_status = context.bot.get_chat_member(chat_id, user_id).status
                 if member_status in ['administrator', 'creator']:
-                    update.message.reply_text("Cannot restrict administrators or chat owner.")
-                    return
+                    return  # Ignore words used by administrator or creator
                 context.bot.restrict_chat_member(chat_id, user_id, permissions=permission, until_date=time.time() + 300)
                 context.bot.delete_message(chat_id, message_id)
                 update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for using a blacklisted word')
@@ -230,8 +229,7 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     if 'http://' in message_text or 'https://' in message_text:
         member_status = context.bot.get_chat_member(chat_id, user_id).status
         if member_status in ['administrator', 'creator']:
-            update.message.reply_text("Cannot restrict administrators or chat owner.")
-            return
+            return  # Ignore links shared by administrator or creator
         context.bot.restrict_chat_member(chat_id, user_id, permissions=permission, until_date=time.time() + 300)
         update.message.reply_text(f'User {update.effective_user.first_name} has been blocked for sharing a link.')
         print(f'User {user_id} blocked for sharing a link in chat {chat_id}')
