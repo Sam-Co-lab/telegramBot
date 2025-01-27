@@ -51,8 +51,9 @@ def update_blocked(new_data):
     else:
         print("Failed to update file:", response.status_code, response.json())
 
-# Function to read the file from GitHub
+# Ensure read_blocked function updates the global blocked_words variable correctly
 def read_blocked():
+    global blocked_words
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
     
     # Get the current file content
@@ -73,7 +74,6 @@ def read_blocked():
         print("Failed to fetch file info:", response.status_code, response.json())
 
     return blocked_words  # Ensure to return the blocked_words dictionary
-
 # Function to handle the block user command
 def block_user(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
@@ -102,7 +102,7 @@ def handle_username(update: Update, context: CallbackContext) -> None:
                 if entity.type == 'mention':
                     username = update.message.text[entity.offset:entity.offset + entity.length].strip('@')
                     try:
-                        user = context.bot.get_chat_member(update.message.chat.id, username).user
+                        user = context.bot.get_chat(username)
                         context.user_data['tagged_user_id'] = user.id
                     except BadRequest as e:
                         update.message.reply_text(f"Failed to get user ID. Error: {e.message}")
@@ -126,79 +126,17 @@ def handle_username(update: Update, context: CallbackContext) -> None:
         except BadRequest as e:
             print(f"BadRequest error: {e.message}")
 
-# Function to handle the button presses
-def handle_button(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    
-    action = query.data
-    context.user_data['action'] = action
-    
-    if action == 'restrict':
-        keyboard = [[InlineKeyboardButton(f"{i} hours", callback_data=f"{i}") for i in range(1, 25)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.edit_message_text(text="Choose the time for which the user should be restricted:", reply_markup=reply_markup)
-    else:
-        chat_id = query.message.chat_id
-        tagged_user_id = context.user_data.get('tagged_user_id')
-        if tagged_user_id:
-            try:
-                member_status = context.bot.get_chat_member(chat_id, tagged_user_id).status
-                if member_status not in ['administrator', 'creator']:
-                    context.bot.kick_chat_member(chat_id, tagged_user_id)
-                    query.edit_message_text(text=f"User {context.user_data['tagged_user']} has been kicked.")
-                    delete_messages(context, query.message.chat_id)
-                else:
-                    query.edit_message_text(text="Cannot kick administrators or chat owner.")
-            except BadRequest as e:
-                query.edit_message_text(text=f"Failed to kick user. Error: {e.message}")
-        else:
-            query.edit_message_text(text="Failed to kick user. No user entity found in the message.")
-
-# Function to handle the restriction duration
-def handle_duration(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    
-    duration_hours = int(query.data)
-    until_date = time.time() + duration_hours * 3600
-    
-    chat_id = query.message.chat_id
-    tagged_user = context.user_data['tagged_user']
-    tagged_user_id = context.user_data.get('tagged_user_id')
-    if tagged_user_id:
-        try:
-            member_status = context.bot.get_chat_member(chat_id, tagged_user_id).status
-            if member_status not in ['administrator', 'creator']:
-                permissions = ChatPermissions(
-                    can_send_messages=False,
-                    can_send_media_messages=False,
-                    can_send_polls=False,
-                    can_send_other_messages=False,
-                    can_add_web_page_previews=False,
-                    can_change_info=False,
-                    can_invite_users=False,
-                    can_pin_messages=False)
-
-                context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
-                query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
-                delete_messages(context, query.message.chat_id)
-            else:
-                query.edit_message_text(text="Cannot restrict administrators or chat owner.")
-        except BadRequest as e:
-            query.edit_message_text(text=f"Failed to restrict user. Error: {e.message}")
-    else:
-        query.edit_message_text(text="Failed to restrict user. No user entity found in the message.")
-
 # Function to delete specific messages
 def delete_messages(context: CallbackContext, chat_id: int) -> None:
     try:
-        context.bot.delete_message(chat_id, context.user_data['mess_to_del'])
-        context.bot.delete_message(chat_id, context.user_data['tagged_message_id'])
+        if 'mess_to_del' in context.user_data:
+            context.bot.delete_message(chat_id, context.user_data['mess_to_del'])
+        if 'tagged_message_id' in context.user_data:
+            context.bot.delete_message(chat_id, context.user_data['tagged_message_id'])
     except BadRequest as e:
         print(f"BadRequest error while deleting messages: {e.message}")
 
-
+# Function to show blocked words
 def show_blocked_words(update: Update, context: CallbackContext) -> None:
     blocked_words = read_blocked()
     chat_id = update.effective_chat.id
@@ -206,6 +144,8 @@ def show_blocked_words(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(str(blocked_words[chat_id])[1:-1])
     else:
         update.message.reply_text("No word blacklisted YET...")
+
+
 
 # Function to ask admin for blocked words
 def set_blocked_words(update: Update, context: CallbackContext) -> None:
