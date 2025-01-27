@@ -166,7 +166,7 @@ def rupdate_blocked_words(update: Update, context: CallbackContext) -> None:
         blocked_words = read_blocked()
         
         if chat_id not in blocked_words:
-            blocked_words[chat_id] = [word.strip() for word in words]
+            update.message.reply_text('No words blocked YET!!')
         else:
             blocked_words[chat_id].remove(word.strip() for word in words)
 
