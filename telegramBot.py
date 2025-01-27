@@ -227,6 +227,7 @@ def main():
     dispatcher.add_handler(CommandHandler("showblockedwords", show_blocked_words))
     dispatcher.add_handler(CommandHandler("unblockwords", remove_blocked_words))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, monitor_chats))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
 
     # Start the webhook to listen for messages
     updater.start_webhook(listen='0.0.0.0',
