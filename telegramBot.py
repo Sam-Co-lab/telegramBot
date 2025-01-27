@@ -244,8 +244,9 @@ def main():
     # Register command handlers
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("setblockedwords", set_blocked_words))
+    dispatcher.add_handler(CommandHandler("blockwords", set_blocked_words))
     dispatcher.add_handler(CommandHandler("showblockedwords", show_blocked_words))
+    dispatcher.add_handler(CommandHandler("unblockwords", remove_blocked_words))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, monitor_chats))
 
     # Start the webhook to listen for messages
