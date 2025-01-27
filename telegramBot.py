@@ -85,6 +85,41 @@ def block_user(update: Update, context: CallbackContext) -> None:
     else:
         update.message.reply_text("Only admins can block users.")
 
+# Function to handle the restriction duration
+def handle_duration(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    query.answer()
+    
+    duration_hours = int(query.data)
+    until_date = time.time() + duration_hours * 3600
+    
+    chat_id = query.message.chat_id
+    tagged_user = context.user_data['tagged_user']
+    tagged_user_id = context.user_data.get('tagged_user_id')
+    if tagged_user_id:
+        try:
+            member_status = context.bot.get_chat_member(chat_id, tagged_user_id).status
+            if member_status not in ['administrator', 'creator']:
+                permissions = ChatPermissions(
+                    can_send_messages=False,
+                    can_send_media_messages=False,
+                    can_send_polls=False,
+                    can_send_other_messages=False,
+                    can add_web_page_previews=False,
+                    can_change_info=False,
+                    can_invite_users=False,
+                    can_pin_messages=False)
+
+                context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
+                query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
+                delete_messages(context, query.message.chat_id)
+            else:
+                query.edit_message_text(text="Cannot restrict administrators or chat owner.")
+        except BadRequest as e:
+            query.edit_message_text(text=f"Failed to restrict user. Error: {e.message}")
+    else:
+        query.edit_message_text(text="Failed to restrict user. No user entity found in the message.")
+
 # Function to handle the button presses
 def handle_button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
