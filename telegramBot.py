@@ -193,7 +193,7 @@ def rupdate_blocked_words(update: Update, context: CallbackContext) -> None:
         context.user_data['waiting_for_words'] = False
         context.dispatcher.remove_handler(MessageHandler, group=1)
 
-# Function to monitor messages and block users
+# Ensure monitor_chats is not called when unblocking words
 def monitor_chats(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
@@ -205,12 +205,12 @@ def monitor_chats(update: Update, context: CallbackContext) -> None:
     permission = ChatPermissions(
         can_send_messages=False,
         can_send_media_messages=False,
-        can_send_polls=False,
-        can_send_other_messages=False,
-        can_add_web_page_previews=False,
-        can_change_info=False,
-        can_invite_users=False,
-        can_pin_messages=False)
+        can send_polls=False,
+        can send_other_messages=False,
+        can add_web_page_previews=False,
+        can change_info=False,
+        can invite_users=False,
+        can pin_messages=False)
 
     # Check for blocked words
     if chat_id in blocked_words:
