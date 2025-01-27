@@ -74,121 +74,6 @@ def read_blocked():
         print("Failed to fetch file info:", response.status_code, response.json())
 
     return blocked_words  # Ensure to return the blocked_words dictionary
-# Function to handle the block user command
-def block_user(update: Update, context: CallbackContext) -> None:
-    chat_id = update.effective_chat.id
-    user_id = update.effective_user.id
-    if update.effective_chat.get_member(user_id).status in ['administrator', 'creator']:
-        message = update.message.reply_text("Please tag the user you want to block using @username")
-        context.user_data['mess_to_del'] = message.message_id
-        context.user_data['waiting_for_username'] = True
-    else:
-        update.message.reply_text("Only admins can block users.")
-
-# Function to handle the restriction duration
-def handle_duration(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    
-    duration_hours = int(query.data)
-    until_date = time.time() + duration_hours * 3600
-    
-    chat_id = query.message.chat_id
-    tagged_user = context.user_data['tagged_user']
-    tagged_user_id = context.user_data.get('tagged_user_id')
-    if tagged_user_id:
-        try:
-            member_status = context.bot.get_chat_member(chat_id, tagged_user_id).status
-            if member_status not in ['administrator', 'creator']:
-                permissions = ChatPermissions(
-                    can_send_messages=False,
-                    can_send_media_messages=False,
-                    can_send_polls=False,
-                    can_send_other_messages=False,
-                    can_add_web_page_previews=False,
-                    can_change_info=False,
-                    can_invite_users=False,
-                    can_pin_messages=False)
-
-                context.bot.restrict_chat_member(chat_id, tagged_user_id, permissions=permissions, until_date=until_date)
-                query.edit_message_text(f"User {tagged_user} has been restricted for {duration_hours} hours.")
-                delete_messages(context, query.message.chat_id)
-            else:
-                query.edit_message_text(text="Cannot restrict administrators or chat owner.")
-        except BadRequest as e:
-            query.edit_message_text(text=f"Failed to restrict user. Error: {e.message}")
-    else:
-        query.edit_message_text(text="Failed to restrict user. No user entity found in the message.")
-
-# Function to handle the button presses
-def handle_button(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    
-    action = query.data
-    context.user_data['action'] = action
-    
-    if action == 'restrict':
-        keyboard = [[InlineKeyboardButton(f"{i} hours", callback_data=f"{i}") for i in range(1, 25)]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        query.edit_message_text(text="Choose the time for which the user should be restricted:", reply_markup=reply_markup)
-    else:
-        chat_id = query.message.chat_id
-        tagged_user_id = context.user_data.get('tagged_user_id')
-        if tagged_user_id:
-            try:
-                member_status = context.bot.get_chat_member(chat_id, tagged_user_id).status
-                if member_status not in ['administrator', 'creator']:
-                    context.bot.kick_chat_member(chat_id, tagged_user_id)
-                    query.edit_message_text(text=f"User {context.user_data['tagged_user']} has been kicked.")
-                    delete_messages(context, query.message.chat_id)
-                else:
-                    query.edit_message_text(text="Cannot kick administrators or chat owner.")
-            except BadRequest as e:
-                query.edit_message_text(text=f"Failed to kick user. Error: {e.message}")
-        else:
-            query.edit_message_text(text="Failed to kick user. No user entity found in the message.")
-
-# Function to handle the username input
-def handle_username(update: Update, context: CallbackContext) -> None:
-    if context.user_data.get('waiting_for_username'):
-        tagged_user = update.message.text
-        context.user_data['tagged_user'] = tagged_user
-        context.user_data['waiting_for_username'] = False
-
-        message_id = update.message.message_id
-        context.user_data['tagged_message_id'] = message_id
-
-        # Extract the user ID from the username mentioned in the message
-        entities = update.message.entities
-        if entities:
-            for entity in entities:
-                if entity.type == 'mention':
-                    username = update.message.text[entity.offset:entity.offset + entity.length].strip('@')
-                    try:
-                        user = context.bot.get_chat(username)
-                        context.user_data['tagged_user_id'] = user.id
-                    except BadRequest as e:
-                        update.message.reply_text(f"Failed to get user ID. Error: {e.message}")
-                        return
-                    break
-            else:
-                update.message.reply_text("No valid username found in the message.")
-                return
-        else:
-            update.message.reply_text("Invalid username format. Please use @username.")
-            return
-
-        keyboard = [
-            [InlineKeyboardButton("Kick User", callback_data='kick')],
-            [InlineKeyboardButton("Restrict User", callback_data='restrict')]
-        ]
-
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        try:
-            update.message.reply_text("Do you want to kick the user or restrict for some time?", reply_markup=reply_markup)
-        except BadRequest as e:
-            print(f"BadRequest error: {e.message}")
 
 # Function to delete specific messages
 def delete_messages(context: CallbackContext, chat_id: int) -> None:
@@ -223,6 +108,8 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
         context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
     else:
         update.message.reply_text('Only admins can blacklist words.')
+
+# Function to update blocked words
 def update_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     message_id = update.message.message_id
@@ -314,10 +201,6 @@ def main():
     dispatcher.add_handler(CommandHandler("setblockedwords", set_blocked_words))
     dispatcher.add_handler(CommandHandler("showblockedwords", show_blocked_words))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, monitor_chats))
-    dispatcher.add_handler(CommandHandler("blockuser", block_user))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_username), group=1)
-    dispatcher.add_handler(CallbackQueryHandler(handle_button))
-    dispatcher.add_handler(CallbackQueryHandler(handle_duration, pattern=r'^\d+$'))
 
     # Start the webhook to listen for messages
     updater.start_webhook(listen='0.0.0.0',
