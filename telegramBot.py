@@ -142,8 +142,8 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
             print(f"BadRequest error: {e.message}")
 
         print(f'Admin set blocked words: {blocked_words[chat_id]} in chat {chat_id}')
-        context.user_data['waiting_for_words'] = False
-        context.dispatcher.remove_handler(MessageHandler, group=1)
+    context.user_data['waiting_for_words'] = False
+    context.dispatcher.remove_handler(MessageHandler, group=1)
 
 # Function to ask admin for blocked words to remove
 def remove_blocked_words(update: Update, context: CallbackContext) -> None:
@@ -191,8 +191,8 @@ def rupdate_blocked_words(update: Update, context: CallbackContext) -> None:
             print(f"BadRequest error: {e.message}")
 
         print(f'Admin updated blocked words: {blocked_words[chat_id]} in chat {chat_id}')
-        context.user_data['waiting_for_words'] = False
-        context.dispatcher.remove_handler(MessageHandler, group=1)
+    context.user_data['waiting_for_words'] = False
+    context.dispatcher.remove_handler(MessageHandler, group=1)
 
 # Function to monitor messages and block users
 def monitor_chats(update: Update, context: CallbackContext) -> None:
