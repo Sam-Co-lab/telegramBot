@@ -163,7 +163,8 @@ def rupdate_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     message_id = update.message.message_id
     if context.user_data.get('waiting_for_words'):
-        words = [word.strip() for word in update.message.text.lower().split(',')]
+        words = update.message.text.lower().split(',')
+        words = [word.strip() for word in words]
         context.bot.delete_message(chat_id, message_id)
         
         blocked_words = read_blocked()
