@@ -105,6 +105,7 @@ def set_blocked_words(update: Update, context: CallbackContext) -> None:
         reply_message = update.message.reply_text('Please send the words to be blacklisted, separated by commas.')
         context.user_data['waiting_for_words'] = 'block'
         context.user_data['reply_mess_to_del'] = reply_message.message_id
+        context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_blocked_words), group=1)
     else:
         update.message.reply_text('Only admins can blacklist words.')
 
@@ -117,20 +118,21 @@ def remove_blocked_words(update: Update, context: CallbackContext) -> None:
         reply_message = update.message.reply_text('Please send the words to be unblocked, separated by commas.')
         context.user_data['waiting_for_words'] = 'unblock'
         context.user_data['reply_mess_to_del'] = reply_message.message_id
+        context.dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_blocked_words), group=1)
     else:
         update.message.reply_text('Only admins can unblock words.')
 
-# Unified handler function to update blocked words
-def update_blocked_words(update: Update, context: CallbackContext) -> None:
+# Unified handler function to handle blocked words
+def handle_blocked_words(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
     message_id = update.message.message_id
     action = context.user_data.get('waiting_for_words')
-    
+
     if action:
         words = [word.strip() for word in update.message.text.lower().split(',')]
         context.bot.delete_message(chat_id, message_id)
         blocked_words = read_blocked()
-        
+
         if action == 'block':
             if chat_id not in blocked_words:
                 blocked_words[chat_id] = words
@@ -139,7 +141,8 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         elif action == 'unblock':
             if chat_id in blocked_words:
                 blocked_words[chat_id] = [word for word in blocked_words[chat_id] if word not in words]
-        
+
+        # Clean up messages
         mess_to_del = context.user_data.get('mess_to_del')
         reply_mess_to_del = context.user_data.get('reply_mess_to_del')
         if mess_to_del:
@@ -158,10 +161,10 @@ def update_blocked_words(update: Update, context: CallbackContext) -> None:
         except BadRequest as e:
             print(f"BadRequest error: {e.message}")
 
+        # Reset waiting_for_words flag
         context.user_data['waiting_for_words'] = None
+        context.dispatcher.remove_handler(MessageHandler, group=1)
 
-# Registering unified handler
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, update_blocked_words), group=1)
 
 # Function to monitor messages and block users
 def monitor_chats(update: Update, context: CallbackContext) -> None:
