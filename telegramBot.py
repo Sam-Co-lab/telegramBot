@@ -85,6 +85,35 @@ def block_user(update: Update, context: CallbackContext) -> None:
     else:
         update.message.reply_text("Only admins can block users.")
 
+# Function to handle the button presses
+def handle_button(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    query.answer()
+    
+    action = query.data
+    context.user_data['action'] = action
+    
+    if action == 'restrict':
+        keyboard = [[InlineKeyboardButton(f"{i} hours", callback_data=f"{i}") for i in range(1, 25)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        query.edit_message_text(text="Choose the time for which the user should be restricted:", reply_markup=reply_markup)
+    else:
+        chat_id = query.message.chat_id
+        tagged_user_id = context.user_data.get('tagged_user_id')
+        if tagged_user_id:
+            try:
+                member_status = context.bot.get_chat_member(chat_id, tagged_user_id).status
+                if member_status not in ['administrator', 'creator']:
+                    context.bot.kick_chat_member(chat_id, tagged_user_id)
+                    query.edit_message_text(text=f"User {context.user_data['tagged_user']} has been kicked.")
+                    delete_messages(context, query.message.chat_id)
+                else:
+                    query.edit_message_text(text="Cannot kick administrators or chat owner.")
+            except BadRequest as e:
+                query.edit_message_text(text=f"Failed to kick user. Error: {e.message}")
+        else:
+            query.edit_message_text(text="Failed to kick user. No user entity found in the message.")
+
 # Function to handle the username input
 def handle_username(update: Update, context: CallbackContext) -> None:
     if context.user_data.get('waiting_for_username'):
